@@ -9,3 +9,14 @@ authors = [
     {name = "FastKit", email = "hello@fastkit.org"}
 ]
 dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9.25,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv-build]
+module-root = "src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
