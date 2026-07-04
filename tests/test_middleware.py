@@ -164,3 +164,55 @@ class TestLocaleMiddleware:
         client.get("/test")
 
         assert detected_locale == "fr"
+
+
+# ============================================================================
+# Test Coverage Gaps
+#
+# Added after reviewing `pytest --cov` output: each of these exercises a
+# branch that was otherwise never hit by the tests above.
+# ============================================================================
+
+class TestCoverageGaps:
+    """Targeted tests for branches missed by the rest of the suite."""
+
+    def test_non_http_scope_passes_through_untouched(self, setup_i18n):
+        """
+        Non-HTTP ASGI scopes (lifespan, websocket, ...) should be passed
+        straight through without the middleware trying to read headers or
+        set a locale at all.
+        """
+        import asyncio
+        from fastkit_translation import LocaleMiddleware
+
+        calls = []
+
+        async def inner_app(scope, receive, send):
+            calls.append(scope["type"])
+
+        middleware = LocaleMiddleware(inner_app)
+
+        asyncio.run(middleware({"type": "lifespan"}, None, None))
+
+        assert calls == ["lifespan"]
+
+    def test_cookie_header_present_without_locale_key(self, setup_i18n):
+        """
+        A Cookie header with other cookies, but none named 'locale', should
+        fall through to the app-wide default rather than erroring.
+        """
+        app = FastAPI()
+        app.add_middleware(LocaleMiddleware)
+
+        detected_locale = None
+
+        @app.get("/test")
+        def test_route():
+            nonlocal detected_locale
+            detected_locale = get_locale()
+            return {"ok": True}
+
+        client = TestClient(app)
+        client.get("/test", cookies={"session_id": "abc123", "theme": "dark"})
+
+        assert detected_locale == "en"

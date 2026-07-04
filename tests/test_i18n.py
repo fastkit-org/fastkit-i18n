@@ -724,3 +724,50 @@ class TestIntegration:
         set_locale('fr')
         result3 = _('messages.welcome')
         assert result3 == "Bienvenue!"
+
+
+# ============================================================================
+# Test Coverage Gaps
+#
+# Added after reviewing `pytest --cov` output: each of these exercises a
+# branch that was otherwise never hit by the tests above.
+# ============================================================================
+
+class TestCoverageGaps:
+    """Targeted tests for branches missed by the rest of the suite."""
+
+    def test_get_with_unknown_locale_and_fallback_disabled_returns_key(self, manager):
+        """
+        Should return the raw key when the requested locale doesn't exist
+        at all AND fallback is disabled - distinct from the case where the
+        locale exists but the key is missing (covered elsewhere).
+        """
+        result = manager.get('messages.welcome', locale='xx', fallback=False)
+        assert result == 'messages.welcome'
+
+    def test_replace_variables_missing_placeholder_value(self, manager):
+        """
+        Should leave the string as-is (with the unresolved placeholder) when
+        replacements are provided but don't cover every {placeholder} in the
+        template, instead of raising.
+        """
+        manager._translations['en']['test'] = {'multi': '{first} and {second}'}
+
+        # Only 'first' provided - template also needs 'second'
+        result = manager.get('test.multi', locale='en', first='A')
+
+        assert result == '{first} and {second}'
+
+    def test_module_level_set_and_get_manager_locale(self, translations_dir):
+        """
+        The free functions set_manager_locale()/get_manager_locale() (thin
+        wrappers around the global manager) should work, not just the
+        TranslationManager instance methods.
+        """
+        set_translation_manager(TranslationManager(translations_dir=translations_dir))
+
+        set_manager_locale('es')
+        assert get_manager_locale() == 'es'
+
+        result = _('messages.welcome')
+        assert result == "¡Bienvenido!"

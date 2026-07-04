@@ -779,3 +779,180 @@ class TestRealWorldScenarios:
         # Spanish: has title, should fallback for content
         assert article.get_translation('title', 'es') == "Título del artículo"
         assert article.get_translation('content', 'es', fallback=True) == "Full content in English"
+
+
+# ============================================================================
+# Test Coverage Gaps
+#
+# Added after reviewing `pytest --cov` output: each of these exercises a
+# branch that was otherwise never hit by the tests above.
+# ============================================================================
+
+class TestCoverageGaps:
+    """Targeted tests for branches missed by the rest of the suite."""
+
+    def test_get_locale_falls_back_to_model_default_with_no_context_set(self, session):
+        """
+        get_locale() should fall back to the model's _fallback_locale (which
+        itself falls back to the app-wide default) when there is truly no
+        instance locale AND no context locale set at all - not just when the
+        context happens to be 'en' already (the autouse fixture normally
+        leaves it set, masking this branch).
+        """
+        from fastkit_translation.locale import _current_locale
+
+        article = Article(author="John")
+        token = _current_locale.set(None)
+        try:
+            assert article.get_locale() == 'en'  # app-wide default
+        finally:
+            _current_locale.reset(token)
+
+    def test_getattribute_conflict_detected_independently_of_setattr(self, session):
+        """
+        The MRO guard should catch a __getattribute__-only conflict too, not
+        just the __setattr__ conflict exercised by the SQLModel test - these
+        are checked and reported independently.
+        """
+        class OverridesGetattributeOnly:
+            def __getattribute__(self, name):
+                return object.__getattribute__(self, name)
+
+        with pytest.raises(TypeError, match="__getattribute__"):
+            class Weird(OverridesGetattributeOnly, TranslatableMixin, Base):
+                __tablename__ = 'weird_getattribute_conflict'
+                __translatable__ = ['title']
+
+                id: Mapped[int] = mapped_column(Integer, primary_key=True)
+                title: Mapped[dict] = mapped_column(JSON)
+
+    def test_works_standalone_without_any_orm_base(self):
+        """
+        TranslatableMixin should work as a plain in-memory mixin with no
+        SQLAlchemy base at all - event registration in __init_subclass__
+        must swallow the resulting InvalidRequestError gracefully instead of
+        blowing up class definition for this fully legitimate, DB-free use
+        case (decoupled from fastkit-core: no database required just to get
+        locale-aware fields).
+        """
+        class PlainNote(TranslatableMixin):
+            __translatable__ = ['title']
+
+        note = PlainNote()
+        note.set_locale('en')
+        note.title = "Hello"
+        note.set_locale('es')
+        note.title = "Hola"
+
+        note.set_locale('en')
+        assert note.title == "Hello"
+        assert note.get_translations('title') == {'en': 'Hello', 'es': 'Hola'}
+
+    def test_get_translation_invalid_field_raises(self, session):
+        """get_translation() (not just get_translations()/set_translation()) should validate the field."""
+        article = Article(author="John")
+
+        with pytest.raises(ValueError, match="not translatable"):
+            article.get_translation('author')
+
+    def test_load_event_with_unset_field(self, session):
+        """Reloading a row where a translatable field was never set should yield an empty dict, not an error."""
+        article = Article(author="John")
+        set_locale('en')
+        article.title = "Hello"
+        # content is intentionally never set
+
+        session.add(article)
+        session.commit()
+
+        session.expire_all()
+        loaded = session.query(Article).first()
+
+        assert loaded.get_translations('content') == {}
+
+    def test_deserialize_translations_with_legacy_json_string(self):
+        """
+        deserialize_translations() should parse a raw JSON *string* value
+        into the internal translations dict.
+
+        This is exercised as a direct unit call rather than through a real
+        DB round-trip: with a properly declared SQLAlchemy `JSON` column
+        (as documented/required), the dialect's own JSON type decodes the
+        column value *before* the ORM 'load' event ever sees it, so
+        deserialize_translations() only ever receives an already-parsed
+        dict in real usage - it can't naturally receive a raw string via
+        that path. This branch exists to tolerate a value coming from
+        elsewhere (a differently-configured column, a direct dict
+        assignment bypassing the JSON layer, etc.), so it's tested directly.
+        """
+        from fastkit_translation.database.translatable import deserialize_translations
+        import json as json_module
+
+        article = Article(author="John")
+        object.__setattr__(article, 'title', json_module.dumps({"en": "Legacy Title"}))
+
+        deserialize_translations(article, context=None)
+
+        assert article.get_translations('title') == {"en": "Legacy Title"}
+
+    def test_deserialize_translations_with_non_json_legacy_string(self):
+        """
+        deserialize_translations() should treat a raw non-JSON string as a
+        single translation in the fallback locale rather than raising.
+        See the note above about why this is a direct unit call.
+        """
+        from fastkit_translation.database.translatable import deserialize_translations
+
+        article = Article(author="John")
+        object.__setattr__(article, 'title', "Just A Plain String")
+
+        deserialize_translations(article, context=None)
+
+        set_locale('en')
+        assert article.title == "Just A Plain String"
+
+    def test_standalone_mixin_swallows_invalidrequesterror_in_cold_process(self):
+        """
+        Confirms the try/except around event.listen() in __init_subclass__
+        actually swallows InvalidRequestError for a plain, non-ORM class -
+        not just that such a class works (test_works_standalone_without_any_orm_base
+        above), but specifically that the exception path is taken.
+
+        Must run in a subprocess: once *any* SQLAlchemy declarative base has
+        been mapped earlier in the process (true for the rest of this test
+        session, since Article/Product are defined at module import time),
+        SQLAlchemy accepts event.listen() on any plain class without
+        complaint, and the except branch is never actually reached.
+        """
+        import subprocess
+        import sys
+        import textwrap
+
+        script = textwrap.dedent("""
+            from fastkit_translation import TranslatableMixin
+
+            class PlainNote(TranslatableMixin):
+                __translatable__ = ["title"]
+
+            note = PlainNote()
+            note.set_locale("en")
+            note.title = "Hello"
+            assert note.title == "Hello"
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "OK" in result.stdout
+
+    def test_set_locale_from_request_helper(self, session):
+        """The FastAPI-docstring helper should set the shared global/context locale."""
+        from fastkit_translation import set_locale_from_request
+
+        set_locale_from_request('es')
+
+        article = Article(author="John")
+        assert article.get_locale() == 'es'
