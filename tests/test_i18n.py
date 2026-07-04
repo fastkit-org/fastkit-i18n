@@ -1,21 +1,21 @@
 """
-Tests for TranslationManager (fastkit_translation.i18n.translation).
+Tests for TranslationManager (fastkit_i18n.i18n.translation).
 
 Adapted from the original fastkit-core test suite for the standalone
-fastkit-translation package:
+fastkit-i18n package:
 - No more fastkit_core.config.ConfigManager - TranslationManager takes
   translations_dir/default_locale/fallback_locale directly, or falls back
-  to the app-wide default set via fastkit_translation.locale.set_default_locale()
+  to the app-wide default set via fastkit_i18n.locale.set_default_locale()
 - manager.set_locale()/get_locale() renamed to set_manager_locale()/
   get_manager_locale() to avoid colliding with the context-level
-  fastkit_translation.locale.set_locale()/get_locale() (which LocaleMiddleware
+  fastkit_i18n.locale.set_locale()/get_locale() (which LocaleMiddleware
   uses per-request)
 """
 
 import pytest
 import json
 
-from fastkit_translation import (
+from fastkit_i18n import (
     TranslationManager,
     get_translation_manager,
     set_translation_manager,
@@ -26,7 +26,7 @@ from fastkit_translation import (
     set_locale,
     get_locale,
 )
-from fastkit_translation.locale import _current_locale, set_default_locale
+from fastkit_i18n.locale import _current_locale, set_default_locale
 
 
 # ============================================================================
@@ -105,7 +105,7 @@ def translations_dir(tmp_path):
 @pytest.fixture(autouse=True)
 def reset_state():
     """Reset global translation manager, context locale and app default before each test."""
-    import fastkit_translation.i18n.translation as translation_module
+    import fastkit_i18n.i18n.translation as translation_module
     translation_module._translation_manager = None
     _current_locale.set(None)
     set_default_locale('en')

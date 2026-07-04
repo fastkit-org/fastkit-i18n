@@ -1,9 +1,9 @@
 """
-Tests for LocaleMiddleware (fastkit_translation.middleware).
+Tests for LocaleMiddleware (fastkit_i18n.middleware).
 
 Adapted from the original fastkit-core test suite for the standalone
-fastkit-translation package:
-- fastkit_translate -> fastkit_translation
+fastkit-i18n package:
+- fastkit_translate -> fastkit_i18n
 - LocaleMiddleware is now a pure ASGI middleware (no starlette dependency),
   but it's still fully compatible with app.add_middleware() on FastAPI/
   Starlette, which is what these tests exercise end-to-end
@@ -15,8 +15,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from fastkit_translation import LocaleMiddleware, get_locale
-from fastkit_translation.locale import _current_locale, set_default_locale
+from fastkit_i18n import LocaleMiddleware, get_locale
+from fastkit_i18n.locale import _current_locale, set_default_locale
 
 
 @pytest.fixture
@@ -183,7 +183,7 @@ class TestCoverageGaps:
         set a locale at all.
         """
         import asyncio
-        from fastkit_translation import LocaleMiddleware
+        from fastkit_i18n import LocaleMiddleware
 
         calls = []
 

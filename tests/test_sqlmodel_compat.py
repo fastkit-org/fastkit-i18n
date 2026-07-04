@@ -29,8 +29,8 @@ import textwrap
 import pytest
 from sqlmodel import SQLModel, Field, Column, JSON, create_engine, Session
 
-from fastkit_translation import TranslatableMixin
-from fastkit_translation.locale import set_locale
+from fastkit_i18n import TranslatableMixin
+from fastkit_i18n.locale import set_locale
 
 
 @pytest.fixture(autouse=True)
@@ -96,7 +96,7 @@ def test_sqlmodel_first_raises_typeerror_at_class_definition():
 
 def test_translatable_mixin_is_first_sqlalchemy_import_in_process():
     """
-    Importing fastkit_translation.database.translatable before touching any
+    Importing fastkit_i18n.database.translatable before touching any
     other SQLAlchemy declarative base must not raise.
 
     This has to run in a subprocess: once any other test in this session
@@ -105,7 +105,7 @@ def test_translatable_mixin_is_first_sqlalchemy_import_in_process():
     registration fix.
     """
     script = textwrap.dedent("""
-        from fastkit_translation.database.translatable import TranslatableMixin
+        from fastkit_i18n.database.translatable import TranslatableMixin
         from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
         from sqlalchemy import JSON
 

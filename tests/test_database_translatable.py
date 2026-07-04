@@ -1,12 +1,12 @@
 """
-Tests for TranslatableMixin (fastkit_translation.database.translatable).
+Tests for TranslatableMixin (fastkit_i18n.database.translatable).
 
 Adapted from the original fastkit-core test suite for the standalone
-fastkit-translation package:
+fastkit-i18n package:
 - fastkit_core.database.Base/IntIdMixin -> local DeclarativeBase + explicit
-  id columns (fastkit-translation has no ORM base class of its own, only
+  id columns (fastkit-i18n has no ORM base class of its own, only
   the mixin)
-- fastkit_core.i18n -> fastkit_translation.locale
+- fastkit_core.i18n -> fastkit_i18n.locale
 - Base.to_dict() integration tests removed - serialization/to_dict is not
   part of this package's scope
 """
@@ -15,8 +15,8 @@ import pytest
 from sqlalchemy import create_engine, String, JSON, Integer
 from sqlalchemy.orm import sessionmaker, Mapped, mapped_column, DeclarativeBase
 
-from fastkit_translation import TranslatableMixin
-from fastkit_translation.locale import set_locale, get_locale
+from fastkit_i18n import TranslatableMixin
+from fastkit_i18n.locale import set_locale, get_locale
 
 
 # ============================================================================
@@ -672,10 +672,10 @@ class TestEdgeCases:
 # ============================================================================
 
 class TestLocaleModuleIntegration:
-    """Test integration with fastkit_translation.locale."""
+    """Test integration with fastkit_i18n.locale."""
 
     def test_uses_shared_locale_context(self, session):
-        """Should use locale from fastkit_translation.locale."""
+        """Should use locale from fastkit_i18n.locale."""
         article = Article(author="John")
 
         # Set via the shared locale module
@@ -692,7 +692,7 @@ class TestLocaleModuleIntegration:
         # Set global locale via TranslatableMixin
         TranslatableMixin.set_global_locale('fr')
 
-        # fastkit_translation.locale should see the same locale
+        # fastkit_i18n.locale should see the same locale
         # (they share the same _current_locale ContextVar)
         assert get_locale() == 'fr'
 
@@ -799,7 +799,7 @@ class TestCoverageGaps:
         context happens to be 'en' already (the autouse fixture normally
         leaves it set, masking this branch).
         """
-        from fastkit_translation.locale import _current_locale
+        from fastkit_i18n.locale import _current_locale
 
         article = Article(author="John")
         token = _current_locale.set(None)
@@ -885,7 +885,7 @@ class TestCoverageGaps:
         elsewhere (a differently-configured column, a direct dict
         assignment bypassing the JSON layer, etc.), so it's tested directly.
         """
-        from fastkit_translation.database.translatable import deserialize_translations
+        from fastkit_i18n.database.translatable import deserialize_translations
         import json as json_module
 
         article = Article(author="John")
@@ -901,7 +901,7 @@ class TestCoverageGaps:
         single translation in the fallback locale rather than raising.
         See the note above about why this is a direct unit call.
         """
-        from fastkit_translation.database.translatable import deserialize_translations
+        from fastkit_i18n.database.translatable import deserialize_translations
 
         article = Article(author="John")
         object.__setattr__(article, 'title', "Just A Plain String")
@@ -929,7 +929,7 @@ class TestCoverageGaps:
         import textwrap
 
         script = textwrap.dedent("""
-            from fastkit_translation import TranslatableMixin
+            from fastkit_i18n import TranslatableMixin
 
             class PlainNote(TranslatableMixin):
                 __translatable__ = ["title"]
@@ -950,7 +950,7 @@ class TestCoverageGaps:
 
     def test_set_locale_from_request_helper(self, session):
         """The FastAPI-docstring helper should set the shared global/context locale."""
-        from fastkit_translation import set_locale_from_request
+        from fastkit_i18n import set_locale_from_request
 
         set_locale_from_request('es')
 
