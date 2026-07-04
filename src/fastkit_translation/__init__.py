@@ -9,6 +9,8 @@ from .i18n.translation import (
     set_manager_locale
 )
 
+from .middleware.middleware import LocaleMiddleware
+
 __all__ = [
     'set_locale',
     'set_default_locale',
@@ -21,6 +23,7 @@ __all__ = [
     'set_translation_manager',
     '_',
     'gettext',
+    'LocaleMiddleware'
 ]
 # NOTE: 'TranslatableMixin' and 'set_locale_from_request' are intentionally
 # NOT in __all__. They're still importable explicitly - that's unaffected
