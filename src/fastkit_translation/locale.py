@@ -16,7 +16,7 @@ Resolution order for "what locale should I use right now":
 """
 
 from __future__ import annotations
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 
 # ----------------------------------------------------------------------------
 # App-level default locale
@@ -49,9 +49,20 @@ def get_default_locale() -> str:
 _current_locale: ContextVar[str | None] = ContextVar("locale", default=None)
 
 
-def set_locale(locale: str) -> None:
-    """Set the current context-scoped locale (e.g. for the current request)."""
-    _current_locale.set(locale)
+def set_locale(locale: str) -> Token:
+    """
+    Set the current context-scoped locale (e.g. for the current request).
+
+    Returns a token that can be passed to `reset_locale()` to restore the
+    locale that was active before this call - useful in middleware so the
+    override doesn't leak past the request it was set for.
+    """
+    return _current_locale.set(locale)
+
+
+def reset_locale(token: Token) -> None:
+    """Restore the locale that was active before the matching set_locale() call."""
+    _current_locale.reset(token)
 
 
 def get_locale() -> str:
