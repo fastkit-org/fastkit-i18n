@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `fastkit-translation` are documented here.
+All notable changes to `fastkit-i18n` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/).
 
@@ -19,7 +19,7 @@ Initial stable release — standalone extraction of the i18n module from
 - `TranslatableMixin` — transparent multi-language fields for SQLAlchemy
   and SQLModel models. Works with plain SQLAlchemy declarative models,
   SQLModel table models, and even standalone (no ORM base at all).
-- `fastkit_translation.locale` — shared app-wide default locale
+- `fastkit_i18n.locale` — shared app-wide default locale
   (`set_default_locale`/`get_default_locale`) and per-request context locale
   (`set_locale`/`get_locale`/`reset_locale`), used consistently by all three
   pieces above.
@@ -27,7 +27,7 @@ Initial stable release — standalone extraction of the i18n module from
   `TypeError` at class-definition time if another base class (e.g. SQLModel)
   wins the MRO for `__setattr__`/`__getattribute__`, instead of silently
   losing translation data at runtime.
-- `pip install fastkit-translation[sqlalchemy]` extra — the SQLAlchemy
+- `pip install fastkit-i18n[sqlalchemy]` extra — the SQLAlchemy
   dependency is optional; `_()` and `LocaleMiddleware` need nothing beyond
   the standard library.
 - `py.typed` marker — the package ships inline type annotations.
