@@ -4,7 +4,6 @@
 Laravel-style i18n for FastAPI. JSON translation files, automatic locale detection, and translatable SQLAlchemy/SQLModel models — without touching a framework. Pairs with [`fastkit-core`](https://fastkit.org/docs/fastkit-core) for translated Pydantic validation errors.
 
 [![PyPI version](https://img.shields.io/pypi/v/fastkit-i18n.svg)](https://pypi.org/project/fastkit-i18n)
-[![Python](https://img.shields.io/pypi/pyversions/fastkit-i18n.svg)](https://pypi.org/project/fastkit-i18n)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Part of FastKit](https://img.shields.io/badge/part%20of-FastKit-6c47ff)](https://fastkit.org)
 
