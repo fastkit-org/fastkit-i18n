@@ -216,11 +216,11 @@ class TranslationManager:
 
         return self._get_nested_value(locale_data, key) is not None
 
-    def get_locale(self) -> str:
+    def get_manager_locale(self) -> str:
         """Get current locale from context."""
         return _current_locale.get() or self.default_locale
 
-    def set_locale(self, locale: str) -> None:
+    def set_manager_locale(self, locale: str) -> None:
         """Set locale in context (shared with TranslatableMixin)."""
         _current_locale.set(locale)
 
@@ -240,7 +240,7 @@ class TranslationManager:
             Dictionary of all translations
         """
         if locale is None:
-            locale = self.get_locale()
+            locale = self.get_manager_locale()
 
         return self._translations.get(locale, {})
 
@@ -321,7 +321,7 @@ def _(key: str, locale: str | None = None, **replacements) -> str:
 def gettext(key: str, locale: str | None = None, **replacements) -> str:
     return _(key, locale, **replacements)
 
-def set_locale(locale: str) -> None:
+def set_manager_locale(locale: str) -> None:
     """
     Set current locale.
 
@@ -329,10 +329,10 @@ def set_locale(locale: str) -> None:
         locale: Locale code (e.g., 'en', 'es', 'fr')
     """
     manager = get_translation_manager()
-    manager.set_locale(locale)
+    manager.set_manager_locale(locale)
 
 
-def get_locale() -> str:
+def get_manager_locale() -> str:
     """
     Get current locale.
 
@@ -340,7 +340,7 @@ def get_locale() -> str:
         Current locale code
     """
     manager = get_translation_manager()
-    return manager.get_locale()
+    return manager.get_manager_locale()
 
 __all__ = [
     'TranslationManager',
@@ -348,6 +348,6 @@ __all__ = [
     'set_translation_manager',
     '_',
     'gettext',
-    'set_locale',
-    'get_locale',
+    'set_manager_locale',
+    'get_manager_locale',
 ]
