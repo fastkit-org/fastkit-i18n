@@ -67,8 +67,8 @@ translations/
 ```python
 # main.py
 from fastapi import FastAPI
-from fastkit_translations import TranslationManager, set_translation_manager
-from fastkit_translations.middleware import LocaleMiddleware
+from fastkit_translation import TranslationManager, set_translation_manager
+from fastkit_translation.middleware import LocaleMiddleware
 
 app = FastAPI()
 app.add_middleware(LocaleMiddleware)
@@ -85,7 +85,7 @@ set_translation_manager(
 ### 3. Translate anywhere
 
 ```python
-from fastkit_translations import _
+from fastkit_translation import _
 
 _("messages.welcome", name="Maria")            # → "Welcome, Maria!"
 _("messages.welcome", name="Maria", locale="de")  # → "Willkommen, Maria!"
@@ -102,7 +102,7 @@ The locale set by `LocaleMiddleware` per request is picked up automatically — 
 Laravel-style dot notation with named interpolation:
 
 ```python
-from fastkit_translations import _
+from fastkit_translation import _
 
 # Simple key
 _("validation.required")
@@ -140,7 +140,7 @@ Declare translatable fields once. Read and write them like normal strings — th
 ```python
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column
-from fastkit_translations.mixin import TranslatableMixin
+from fastkit_translation.mixin import TranslatableMixin
 
 class Article(Base, TranslatableMixin):
     __translatable__ = ["title", "content"]
@@ -177,7 +177,7 @@ With `LocaleMiddleware` registered, `article.title` reads the correct locale aut
 
 ```python
 from sqlmodel import SQLModel, Field, Column, JSON
-from fastkit_translations.mixin import TranslatableMixin
+from fastkit_translation.mixin import TranslatableMixin
 
 class Article(TranslatableMixin, SQLModel, table=True):
     __translatable__ = ["title", "content"]
@@ -201,7 +201,7 @@ What `fastkit-translations` provides is the primitive that logic is built on: `_
 
 ```python
 # Inside fastkit-core's error formatter (not part of this package)
-from fastkit_translations import _
+from fastkit_translation import _
 
 _("validation.required", field="title")
 # → "The title field is required." (or the current request's locale)
