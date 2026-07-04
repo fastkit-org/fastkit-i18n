@@ -3,13 +3,14 @@
 
 Laravel-style i18n for FastAPI. JSON translation files, automatic locale detection, and translatable SQLAlchemy/SQLModel models — without touching a framework. Pairs with [`fastkit-core`](https://fastkit.org/docs/fastkit-core) for translated Pydantic validation errors.
 
-[![PyPI version](https://img.shields.io/pypi/v/fastkit-i18nsvg)](https://pypi.org/project/fastkit-i18n)
-[![Python](https://img.shields.io/pypi/pyversions/fastkit-i18nsvg)](https://pypi.org/project/fastkit-i18n)
+[![PyPI version](https://img.shields.io/pypi/v/fastkit-i18n.svg)](https://pypi.org/project/fastkit-i18n)
+[![Python](https://img.shields.io/pypi/pyversions/fastkit-i18n.svg)](https://pypi.org/project/fastkit-i18n)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Part of FastKit](https://img.shields.io/badge/part%20of-FastKit-6c47ff)](https://fastkit.org)
 
   [![FastAPI](https://img.shields.io/badge/topic-fastapi-009688?style=flat-square)](https://github.com/topics/fastapi)
   [![i18n](https://img.shields.io/badge/topic-i18n-orange?style=flat-square)](https://github.com/topics/i18n)
+  [![Localization](https://img.shields.io/badge/topic-localization-blue?style=flat-square)](https://github.com/topics/localization)
 </div>
 
 ---
@@ -192,7 +193,7 @@ class Article(TranslatableMixin, SQLModel, table=True):
     content: dict = Field(sa_column=Column(JSON))
 ```
 
-**`TranslatableMixin` must come first in the base class list.** It overrides `__setattr__`/`__getattribute__` to make translatable fields look like plain strings, and it doesn't cooperate with `super()` there — if `SQLModel` (or any other class that also overrides these) comes first, its version wins for writes while `TranslatableMixin`'s still wins for reads, so a field can silently look empty instead of raising an error. Get the order backwards and `fastkit-i18ns` raises a `TypeError` immediately when the class is defined, telling you exactly what to fix — it doesn't fail silently at runtime.
+**`TranslatableMixin` must come first in the base class list.** It overrides `__setattr__`/`__getattribute__` to make translatable fields look like plain strings, and it doesn't cooperate with `super()` there — if `SQLModel` (or any other class that also overrides these) comes first, its version wins for writes while `TranslatableMixin`'s still wins for reads, so a field can silently look empty instead of raising an error. Get the order backwards and `fastkit-i18n` raises a `TypeError` immediately when the class is defined, telling you exactly what to fix — it doesn't fail silently at runtime.
 
 **Known limitation:** because writes to translatable fields bypass Pydantic's own attribute bookkeeping, they don't show up in `model_fields_set`. If you rely on `article.model_dump(exclude_unset=True)`, translatable fields you've set will be excluded as if untouched. Use `get_translations()` / `has_translation()` instead of `model_dump()` when you need to know which translatable fields were actually set.
 
