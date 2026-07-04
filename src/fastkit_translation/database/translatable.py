@@ -98,6 +98,42 @@ class TranslatableMixin:
         self._instance_locale = locale
         return self
 
+    def __init_subclass__(cls, **kwargs) -> None:
+        """
+        Fail fast if another base class wins the MRO for __setattr__ or
+        __getattribute__.
+
+        TranslatableMixin does not cooperate via super() in these dunders -
+        it must be the one Python resolves to, or transparent field access
+        breaks *silently*: e.g. mixed with SQLModel/pydantic in the wrong
+        order, writes go through the other class's __setattr__ (bypassing
+        the translation dict) while reads still go through ours (finding
+        nothing), so a field looks like it "lost" its value instead of
+        raising an error.
+
+        Fix: put TranslatableMixin first in the base class list, e.g.
+            class Article(TranslatableMixin, SQLModel, table=True): ...
+            class Article(TranslatableMixin, Base): ...
+        """
+        super().__init_subclass__(**kwargs)
+
+        conflicts = []
+        if cls.__setattr__ is not TranslatableMixin.__setattr__:
+            conflicts.append(('__setattr__', cls.__setattr__.__qualname__))
+        if cls.__getattribute__ is not TranslatableMixin.__getattribute__:
+            conflicts.append(('__getattribute__', cls.__getattribute__.__qualname__))
+
+        if conflicts:
+            details = '; '.join(f'{name} resolves to {owner}' for name, owner in conflicts)
+            raise TypeError(
+                f"{cls.__name__}: another base class overrides {details}, which "
+                f"would silently break TranslatableMixin's transparent field access "
+                f"(translations could be written but never read back, or vice versa, "
+                f"with no error raised). Put TranslatableMixin FIRST in the base "
+                f"class list, e.g.:\n"
+                f"    class {cls.__name__}(TranslatableMixin, <YourOtherBase>, ...): ..."
+            )
+
     @classmethod
     def set_global_locale(cls, locale: str) -> None:
         """Set global locale (affects all instances in current context)."""

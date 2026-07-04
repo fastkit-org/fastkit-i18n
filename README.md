@@ -1,6 +1,6 @@
 # fastkit-translations
 
-Laravel-style i18n for FastAPI. JSON translation files, automatic locale detection, translatable SQLAlchemy models, and translated Pydantic validation errors — without touching a framework.
+Laravel-style i18n for FastAPI. JSON translation files, automatic locale detection, and translatable SQLAlchemy/SQLModel models — without touching a framework. Pairs with [`fastkit-core`](https://fastkit.org/docs/fastkit-core) for translated Pydantic validation errors.
 
 [![PyPI version](https://img.shields.io/pypi/v/fastkit-translations.svg)](https://pypi.org/project/fastkit-translations)
 [![Python](https://img.shields.io/pypi/pyversions/fastkit-translations.svg)](https://pypi.org/project/fastkit-translations)
@@ -33,7 +33,7 @@ title = article.title.get(locale) or article.title.get("en")  # manual fallback
 pip install fastkit-translations
 ```
 
-**Requirements:** Python 3.11+, no mandatory dependencies beyond the standard library. Optional integrations for SQLAlchemy and Pydantic are available.
+**Requirements:** Python 3.10+, no mandatory dependencies beyond the standard library. The `TranslatableMixin` needs SQLAlchemy — install it with `pip install fastkit-translations[sqlalchemy]` when you need it. `_()` and `LocaleMiddleware` need nothing extra.
 
 ---
 
@@ -171,32 +171,43 @@ article.get_translations("title")
 
 With `LocaleMiddleware` registered, `article.title` reads the correct locale automatically per request — no `set_locale()` needed in route handlers.
 
+#### Works with SQLModel too
+
+`SQLModel` is built directly on top of SQLAlchemy's ORM (a `SQLModel(table=True)` class *is* a real SQLAlchemy mapped class), so `TranslatableMixin` works with it the same way — no separate integration needed:
+
+```python
+from sqlmodel import SQLModel, Field, Column, JSON
+from fastkit_translations.mixin import TranslatableMixin
+
+class Article(TranslatableMixin, SQLModel, table=True):
+    __translatable__ = ["title", "content"]
+
+    id: int | None = Field(default=None, primary_key=True)
+    title: dict = Field(sa_column=Column(JSON))
+    content: dict = Field(sa_column=Column(JSON))
+```
+
+**`TranslatableMixin` must come first in the base class list.** It overrides `__setattr__`/`__getattribute__` to make translatable fields look like plain strings, and it doesn't cooperate with `super()` there — if `SQLModel` (or any other class that also overrides these) comes first, its version wins for writes while `TranslatableMixin`'s still wins for reads, so a field can silently look empty instead of raising an error. Get the order backwards and `fastkit-translations` raises a `TypeError` immediately when the class is defined, telling you exactly what to fix — it doesn't fail silently at runtime.
+
+**Known limitation:** because writes to translatable fields bypass Pydantic's own attribute bookkeeping, they don't show up in `model_fields_set`. If you rely on `article.model_dump(exclude_unset=True)`, translatable fields you've set will be excluded as if untouched. Use `get_translations()` / `has_translation()` instead of `model_dump()` when you need to know which translatable fields were actually set.
+
 ---
 
 ### Translated Pydantic validation errors
 
-`TranslatableMixin` works with any Pydantic `BaseModel` to format validation errors using your translation files:
+Formatting a Pydantic `ValidationError` into per-language messages isn't something `fastkit-translations` does itself — mapping error types (`missing`, `string_too_short`, `value_error.email`, ...) to messages is validation-framework logic, not i18n logic, and keeping it out keeps this package dependency-free for that use case.
+
+What `fastkit-translations` provides is the primitive that logic is built on: `_()`, already resolving to the correct per-request locale via `LocaleMiddleware`. In the FastKit ecosystem this formatting lives in [`fastkit-core`](https://fastkit.org/docs/fastkit-core), which calls straight into `_()`:
 
 ```python
-from pydantic import EmailStr, BaseModel
-from fastkit_translations.validation import format_errors
+# Inside fastkit-core's error formatter (not part of this package)
+from fastkit_translations import _
 
-class ArticleCreate(BaseModel):
-    title: str
-    email: EmailStr
+_("validation.required", field="title")
+# → "The title field is required." (or the current request's locale)
 ```
 
-```python
-# Request with Accept-Language: de
-try:
-    ArticleCreate(title="", email="not-an-email")
-except ValidationError as exc:
-    errors = format_errors(exc)
-    # {
-    #   "title": ["Das Feld title ist erforderlich."],
-    #   "email": ["Das Feld email muss eine gültige E-Mail-Adresse sein."]
-    # }
-```
+If you're not using `fastkit-core`, you can write the same kind of formatter yourself — walk `exc.errors()`, map each `error['type']` to a `validation.*` key (see the file format below for the suggested key names), and call `_()`.
 
 ---
 
