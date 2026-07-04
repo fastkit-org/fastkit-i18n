@@ -9,12 +9,12 @@ from typing import Any, TYPE_CHECKING
 import json
 
 try:
-    from sqlalchemy import event
-except ImportError as exc:  # pragma: no cover
+    from sqlalchemy import event, exc
+except ImportError as err:  # pragma: no cover
     raise ImportError(
         "fastkit_translation.database.translatable requires SQLAlchemy. "
         "Install it with: pip install fastkit-translation[sqlalchemy]"
-    ) from exc
+    ) from err
 
 from fastkit_translation.locale import _current_locale, get_default_locale
 
@@ -133,6 +133,33 @@ class TranslatableMixin:
                 f"class list, e.g.:\n"
                 f"    class {cls.__name__}(TranslatableMixin, <YourOtherBase>, ...): ..."
             )
+
+        # Register the (de)serialization hooks directly on this concrete
+        # class, rather than once on the bare mixin at module import time.
+        #
+        # A module-level `event.listens_for(TranslatableMixin, 'load',
+        # propagate=True)` only works if some other declarative base/mapped
+        # class has already been touched earlier in the *process* - without
+        # that, SQLAlchemy doesn't yet recognize a plain, never-mapped class
+        # as a valid propagate target and raises InvalidRequestError. That
+        # makes behavior depend on unrelated import order elsewhere in the
+        # app, which is exactly the kind of implicit coupling this package
+        # is trying to avoid.
+        #
+        # Registering per-concrete-class here instead - after `super().
+        # __init_subclass__()` above has already run the real declarative/
+        # SQLModel mapping - sidesteps that entirely, since `cls` is
+        # guaranteed to already be mapped by this point (both here and for
+        # any further subclass of `cls`, since __init_subclass__ re-fires
+        # for each level). Abstract/never-mapped intermediate classes just
+        # skip registration quietly and get it at whichever concrete
+        # subclass actually ends up mapped.
+        try:
+            event.listen(cls, 'load', deserialize_translations)
+            event.listen(cls, 'before_insert', serialize_translations)
+            event.listen(cls, 'before_update', serialize_translations)
+        except exc.InvalidRequestError:
+            pass
 
     @classmethod
     def set_global_locale(cls, locale: str) -> None:
@@ -349,10 +376,12 @@ class TranslatableMixin:
 
 
 # ============================================================================
-# SQLAlchemy Event Listeners
+# SQLAlchemy Event Listener Functions
+#
+# These are registered per-concrete-class from TranslatableMixin's
+# __init_subclass__ above, not at module level - see the comment there for
+# why.
 # ============================================================================
-
-@event.listens_for(TranslatableMixin, 'load', propagate=True)
 def deserialize_translations(target, context):
     """
     After loading from DB, parse JSON into internal storage.
@@ -396,8 +425,6 @@ def deserialize_translations(target, context):
             object.__setattr__(target, storage_name, {})
 
 
-@event.listens_for(TranslatableMixin, 'before_insert', propagate=True)
-@event.listens_for(TranslatableMixin, 'before_update', propagate=True)
 def serialize_translations(mapper, connection, target):
     """
     Before saving to DB, convert internal storage to JSON.
