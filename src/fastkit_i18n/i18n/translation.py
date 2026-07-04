@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Shared locale context/config with TranslatableMixin - single source of
 # truth, fully decoupled from fastkit-core.
-from fastkit_translation.locale import _current_locale, get_default_locale
+from fastkit_i18n.locale import _current_locale, get_default_locale
 
 
 class TranslationManager:
@@ -62,7 +62,7 @@ class TranslationManager:
             translations_dir: Path to translations directory.
             default_locale: Locale to use when no context/request locale is
                 set. If None, falls back to the app-wide default configured
-                via `fastkit_translation.locale.set_default_locale()`.
+                via `fastkit_i18n.locale.set_default_locale()`.
             fallback_locale: Locale to use when a key/file is missing for the
                 requested locale. If None, uses `default_locale`.
         """

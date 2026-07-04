@@ -23,7 +23,7 @@ from contextvars import ContextVar, Token
 # ----------------------------------------------------------------------------
 # Set once at startup, independent of any host framework config:
 #
-#   from fastkit_translation.locale import set_default_locale
+#   from fastkit_i18n.locale import set_default_locale
 #   set_default_locale("en")
 #
 _default_locale: str = "en"

@@ -12,11 +12,11 @@ try:
     from sqlalchemy import event, exc
 except ImportError as err:  # pragma: no cover
     raise ImportError(
-        "fastkit_translation.database.translatable requires SQLAlchemy. "
-        "Install it with: pip install fastkit-translation[sqlalchemy]"
+        "fastkit_i18n.database.translatable requires SQLAlchemy. "
+        "Install it with: pip install fastkit-i18n[sqlalchemy]"
     ) from err
 
-from fastkit_translation.locale import _current_locale, get_default_locale
+from fastkit_i18n.locale import _current_locale, get_default_locale
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -70,7 +70,7 @@ class TranslatableMixin:
     # Configure in your model
     __translatable__: list[str] = []
     __fallback_locale__: str = None  # If unset, falls back to the app-wide
-                                      # default (fastkit_translation.locale.set_default_locale)
+                                      # default (fastkit_i18n.locale.set_default_locale)
 
     @property
     def _fallback_locale(self) -> str:

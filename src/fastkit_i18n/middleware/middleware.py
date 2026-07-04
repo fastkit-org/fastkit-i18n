@@ -20,10 +20,10 @@ class LocaleMiddleware:
     1. Accept-Language header
     2. ?lang= query parameter
     3. locale cookie
-    4. App-wide default (fastkit_translation.locale.set_default_locale)
+    4. App-wide default (fastkit_i18n.locale.set_default_locale)
 
     Usage (any ASGI app, e.g. FastAPI/Starlette):
-        from fastkit_translation.middleware import LocaleMiddleware
+        from fastkit_i18n.middleware import LocaleMiddleware
 
         app.add_middleware(LocaleMiddleware)
 
