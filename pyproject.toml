@@ -8,10 +8,10 @@ license = {text = "MIT"}
 authors = [
     {name = "FastKit", email = "hello@fastkit.org"}
 ]
-dependencies = [
-    "sqlalchemy>=2.0",
-    "starlette>=0.36",
-]
+dependencies = []
+
+[project.optional-dependencies]
+sqlalchemy = ["sqlalchemy>=2.0"]
 
 [build-system]
 requires = ["uv_build>=0.9.25,<0.10.0"]

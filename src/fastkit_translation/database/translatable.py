@@ -6,8 +6,15 @@ Automatically handles translation storage and retrieval with zero boilerplate.
 
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
-from sqlalchemy import event
 import json
+
+try:
+    from sqlalchemy import event
+except ImportError as exc:  # pragma: no cover
+    raise ImportError(
+        "fastkit_translation.database.translatable requires SQLAlchemy. "
+        "Install it with: pip install fastkit-translation[sqlalchemy]"
+    ) from exc
 
 from fastkit_translation.locale import _current_locale, get_default_locale
 
