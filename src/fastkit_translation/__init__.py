@@ -8,6 +8,7 @@ from .i18n.translation import (
     get_manager_locale,
     set_manager_locale
 )
+from .database.translatable import TranslatableMixin, set_locale_from_request
 
 __all__ = [
     'set_locale',
@@ -20,5 +21,7 @@ __all__ = [
     'set_manager_locale',
     'set_translation_manager',
     '_',
-    'gettext'
+    'gettext',
+    'TranslatableMixin',
+    'set_locale_from_request'
 ]
