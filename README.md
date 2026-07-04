@@ -3,8 +3,8 @@
 
 Laravel-style i18n for FastAPI. JSON translation files, automatic locale detection, and translatable SQLAlchemy/SQLModel models — without touching a framework. Pairs with [`fastkit-core`](https://fastkit.org/docs/fastkit-core) for translated Pydantic validation errors.
 
-[![PyPI version](https://img.shields.io/pypi/v/fastkit-translation.svg)](https://pypi.org/project/fastkit-translation)
-[![Python](https://img.shields.io/pypi/pyversions/fastkit-translation.svg)](https://pypi.org/project/fastkit-translation)
+[![PyPI version](https://img.shields.io/pypi/v/fastkit-i18nsvg)](https://pypi.org/project/fastkit-i18n)
+[![Python](https://img.shields.io/pypi/pyversions/fastkit-i18nsvg)](https://pypi.org/project/fastkit-i18n)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Part of FastKit](https://img.shields.io/badge/part%20of-FastKit-6c47ff)](https://fastkit.org)
 
@@ -28,17 +28,17 @@ title = article.title.get(locale) or article.title.get("en")  # manual fallback
 # Inconsistent response shapes per endpoint
 ```
 
-`fastkit-translation` solves all three problems with one install.
+`fastkit-i18n` solves all three problems with one install.
 
 ---
 
 ## Installation
 
 ```bash
-pip install fastkit-translation
+pip install fastkit-i18n
 ```
 
-**Requirements:** Python 3.10+, no mandatory dependencies beyond the standard library. The `TranslatableMixin` needs SQLAlchemy — install it with `pip install fastkit-translation[sqlalchemy]` when you need it. `_()` and `LocaleMiddleware` need nothing extra.
+**Requirements:** Python 3.10+, no mandatory dependencies beyond the standard library. The `TranslatableMixin` needs SQLAlchemy — install it with `pip install fastkit-i18n[sqlalchemy]` when you need it. `_()` and `LocaleMiddleware` need nothing extra.
 
 ---
 
@@ -192,7 +192,7 @@ class Article(TranslatableMixin, SQLModel, table=True):
     content: dict = Field(sa_column=Column(JSON))
 ```
 
-**`TranslatableMixin` must come first in the base class list.** It overrides `__setattr__`/`__getattribute__` to make translatable fields look like plain strings, and it doesn't cooperate with `super()` there — if `SQLModel` (or any other class that also overrides these) comes first, its version wins for writes while `TranslatableMixin`'s still wins for reads, so a field can silently look empty instead of raising an error. Get the order backwards and `fastkit-translations` raises a `TypeError` immediately when the class is defined, telling you exactly what to fix — it doesn't fail silently at runtime.
+**`TranslatableMixin` must come first in the base class list.** It overrides `__setattr__`/`__getattribute__` to make translatable fields look like plain strings, and it doesn't cooperate with `super()` there — if `SQLModel` (or any other class that also overrides these) comes first, its version wins for writes while `TranslatableMixin`'s still wins for reads, so a field can silently look empty instead of raising an error. Get the order backwards and `fastkit-i18ns` raises a `TypeError` immediately when the class is defined, telling you exactly what to fix — it doesn't fail silently at runtime.
 
 **Known limitation:** because writes to translatable fields bypass Pydantic's own attribute bookkeeping, they don't show up in `model_fields_set`. If you rely on `article.model_dump(exclude_unset=True)`, translatable fields you've set will be excluded as if untouched. Use `get_translations()` / `has_translation()` instead of `model_dump()` when you need to know which translatable fields were actually set.
 
@@ -200,9 +200,9 @@ class Article(TranslatableMixin, SQLModel, table=True):
 
 ### Translated Pydantic validation errors
 
-Formatting a Pydantic `ValidationError` into per-language messages isn't something `fastkit-translation` does itself — mapping error types (`missing`, `string_too_short`, `value_error.email`, ...) to messages is validation-framework logic, not i18n logic, and keeping it out keeps this package dependency-free for that use case.
+Formatting a Pydantic `ValidationError` into per-language messages isn't something `fastkit-i18n` does itself — mapping error types (`missing`, `string_too_short`, `value_error.email`, ...) to messages is validation-framework logic, not i18n logic, and keeping it out keeps this package dependency-free for that use case.
 
-What `fastkit-translation` provides is the primitive that logic is built on: `_()`, already resolving to the correct per-request locale via `LocaleMiddleware`. In the FastKit ecosystem this formatting lives in [`fastkit-core`](https://fastkit.org/docs/fastkit-core), which calls straight into `_()`:
+What `fastkit-i18n` provides is the primitive that logic is built on: `_()`, already resolving to the correct per-request locale via `LocaleMiddleware`. In the FastKit ecosystem this formatting lives in [`fastkit-core`](https://fastkit.org/docs/fastkit-core), which calls straight into `_()`:
 
 ```python
 # Inside fastkit-core's error formatter (not part of this package)
@@ -218,16 +218,16 @@ If you're not using `fastkit-core`, you can write the same kind of formatter you
 
 ## Using with FastKit Core
 
-`fastkit-translation` is the standalone extraction of the i18n module from [`fastkit-core`](https://fastkit.org/docs/fastkit-core). If you use `fastkit-core`, you already have these features — no separate install needed.
+`fastkit-i18n` is the standalone extraction of the i18n module from [`fastkit-core`](https://fastkit.org/docs/fastkit-core). If you use `fastkit-core`, you already have these features — no separate install needed.
 
 Install just translations:
 ```bash
-pip install fastkit-translation
+pip install fastkit-i18n
 ```
 
 Or install the full FastKit toolkit:
 ```bash
-pip install fastkit-core  # includes fastkit-translation
+pip install fastkit-core  # includes fastkit-i18n
 ```
 
 ---
@@ -236,7 +236,7 @@ pip install fastkit-core  # includes fastkit-translation
 
 `babel` and `gettext` are excellent tools, but they require a compilation step (`.po` → `.mo`), binary files in your repo, and a non-trivial setup process. For most FastAPI applications, JSON files are simpler to manage, easy to version in Git, straightforward to edit by non-developers, and ready to sync with translation platforms like Crowdin or Weblate.
 
-`fastkit-translation` is intentionally focused on JSON-based translations. If you need `.po`/`.mo` support, `babel` is the right tool.
+`fastkit-i18n` is intentionally focused on JSON-based translations. If you need `.po`/`.mo` support, `babel` is the right tool.
 
 ---
 
@@ -270,12 +270,12 @@ Standard JSON with dot-notation keys and `{variable}` interpolation:
 
 ## Part of the FastKit ecosystem
 
-`fastkit-translation` is part of [FastKit](https://fastkit.org) — a collection of production-tested building blocks for FastAPI that bring the developer experience of Laravel to the Python ecosystem.
+`fastkit-i18n` is part of [FastKit](https://fastkit.org) — a collection of production-tested building blocks for FastAPI that bring the developer experience of Laravel to the Python ecosystem.
 
 | Package | Description |
 |---|---|
 | [`fastkit-core`](https://pypi.org/project/fastkit-core) | Full toolkit — repository pattern, service layer, caching, events, HTTP utilities |
-| [`fastkit-translation`](https://pypi.org/project/fastkit-translation) | This package — i18n standalone |
+| [`fastkit-i18n`](https://pypi.org/project/fastkit-i18n) | This package — i18n standalone |
 | [`fastkit-cli`](https://pypi.org/project/fastkit-cli) | Code generation — scaffold modules, manage migrations and seeders |
 | [`mailbridge`](https://pypi.org/project/mailbridge) | Multi-provider email for any Python project |
 
@@ -283,7 +283,7 @@ Standard JSON with dot-notation keys and `{variable}` interpolation:
 
 ## Documentation
 
-Full documentation at [fastkit.org/docs/fastkit-translation](https://fastkit.org/docs/fastkit-translation)
+Full documentation at [fastkit.org/docs/fastkit-i18n](https://fastkit.org/docs/fastkit-i18n)
 
 ---
 
